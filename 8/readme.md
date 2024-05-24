@@ -23,3 +23,4 @@
 ### 3. [Python и Tkinter | окно приложения](https://metanit.com/python/tkinter/1.2.php)
 ### 4. [Скрапинг сайта с помощью Python: гайд для новичков](https://tproger.ru/translations/skraping-sajta-s-pomoshhju-python-gajd-dlja-novichkov)
 ### 5. [Веб-скрапинг с помощью Python](https://ru-brightdata.com/blog/how-tos-ru/web-scraping-with-python)
+### 6. [Настройка полосы прокрутки в CSS](https://timeweb.cloud/tutorials/css-html/sozdanie-stilej-panelej-prokrutki-s-pomoshchyu-css)
