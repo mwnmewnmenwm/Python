@@ -1,62 +1,89 @@
 import tkinter as tk
 from tkinter import messagebox
-from recipes.calculator import calculate_recipe
-from recipes.report import create_docx_report
+from recipes import wok, burger, pizza
+import docx
 
-def calculate_and_save():
-    selected_recipe = recipe_var.get() # рецепт
-    recipe = {} # ингредиенты и их количество
-    for ingredient, widgets in entries.items():
-        entry = widgets[1]
-        recipe[ingredient] = float(entry.get())
+def calculate():
+    selected_recipe = None
+    if recipe_var.get() == "Wok":
+        selected_recipe = wok.ingredients
+    elif recipe_var.get() == "Burger":
+        selected_recipe = burger.ingredients
+    elif recipe_var.get() == "Pizza":
+        selected_recipe = pizza.ingredients
     
-    total_calories, total_cost = calculate_recipe(recipe)
-    result_text.set(f'Энергетическая ценность: {total_calories} ккал\nСтоимость: {total_cost} руб.')
-    create_docx_report(selected_recipe, recipe, total_calories, total_cost)
-    messagebox.showinfo('Информация', 'Отчет успешно создан!')
+    total_calories = 0
+    total_cost = 0
+    for ingredient, info in selected_recipe.items():
+        quantity = float(ingredient_entries[ingredient].get())
+        total_calories += info['calories'] * (quantity / 100)
+        total_cost += info['price'] * (quantity / 100)
+    
+    result_text = f"Выбранный рецепт: {recipe_var.get()}\n"
+    result_text += f"Энергетическая ценность: {total_calories} кал\n"
+    result_text += f"Стоимость рецепта: {total_cost} руб"
+    result_label.config(text=result_text)
+
+    save_report(recipe_var.get(), total_calories, total_cost)
+
+def save_report(selected_recipe, calories, cost):
+    doc = docx.Document()
+    doc.add_heading('Отчет о расчете рецепта', level=1)
+    doc.add_paragraph(f"Выбранный рецепт: {selected_recipe}")
+    doc.add_paragraph(f"Энергетическая ценность: {calories} кал")
+    doc.add_paragraph(f"Стоимость рецепта: {cost} руб")
+    doc.save('ворд.docx')
+
+def update_ingredients(selected_recipe):
+    for widget in ingredients_frame.winfo_children():
+        widget.destroy()
+    
+    global ingredient_entries
+    ingredient_entries = {}
+    for ingredient in selected_recipe.keys():
+        label = tk.Label(ingredients_frame, text=ingredient)
+        label.pack(side=tk.LEFT)
+        entry = tk.Entry(ingredients_frame)
+        entry.pack(side=tk.LEFT)
+        ingredient_entries[ingredient] = entry
 
 root = tk.Tk()
-root.title("Калькулятор рецептов")
+root.title("Recipe Calculator")
 
-recipe_var = tk.StringVar(value='Пицца')
+recipe_label = tk.Label(root, text="Выберите рецепт:")
+recipe_label.pack()
 
-tk.Label(root, text="Выберите рецепт:").pack() # кнопка для выбора рецепта
-tk.Radiobutton(root, text="Пицца", variable=recipe_var, value='Пицца').pack()
-tk.Radiobutton(root, text="Бургер", variable=recipe_var, value='Бургер').pack()
-tk.Radiobutton(root, text="Вок", variable=recipe_var, value='Вок').pack()
+recipe_var = tk.StringVar(root)
+recipe_var.set("Wok")
 
-entries = {}
+recipe_options = ["Wok", "Burger", "Pizza"]
 
-def create_entries(ingredients):
-
-    for widgets in entries.values():
-        widgets[0].destroy()  
-        widgets[1].destroy()  
-    entries.clear()
+def update_ingredients_on_change(*args):
+    selected_recipe = None
+    if recipe_var.get() == "Wok":
+        selected_recipe = wok.ingredients
+    elif recipe_var.get() == "Burger":
+        selected_recipe = burger.ingredients
+    elif recipe_var.get() == "Pizza":
+        selected_recipe = pizza.ingredients
     
-    for ingredient in ingredients:
-        label = tk.Label(root, text=f"{ingredient} (г):")
-        label.pack()
-        entry = tk.Entry(root)
-        entry.pack()
-        entries[ingredient] = (label, entry)
+    update_ingredients(selected_recipe)
 
-def update_entries(*args): # тут будут менятся ингредиенты 
-    selected_recipe = recipe_var.get()
-    if selected_recipe == 'Пицца':
-        create_entries(['тесто', 'сыр', 'колбаса'])
-    elif selected_recipe == 'Бургер':
-        create_entries(['булка', 'котлета', 'сыр'])
-    elif selected_recipe == 'Вок':
-        create_entries(['лапша', 'курица', 'сыр'])
+recipe_var.trace("w", update_ingredients_on_change)
 
-recipe_var.trace('w', update_entries)
+recipe_menu = tk.OptionMenu(root, recipe_var, *recipe_options)
+recipe_menu.pack()
 
-button_calculate = tk.Button(root, text="Рассчитать и сохранить", command=calculate_and_save)
-button_calculate.pack()
+ingredients_frame = tk.Frame(root)
+ingredients_frame.pack()
 
-result_text = tk.StringVar()
-result_label = tk.Label(root, textvariable=result_text)
+ingredient_entries = {}
+update_ingredients(wok.ingredients)
+
+calculate_button = tk.Button(root, text="Рассчитать", command=calculate)
+calculate_button.pack()
+
+result_label = tk.Label(root, text="")
 result_label.pack()
 
-root.mainloop() # необходимо дял запуска
+root.mainloop()
